@@ -1,0 +1,40 @@
+Release 13.1 Drc O.40d (lin)
+Copyright (c) 1995-2011 Xilinx, Inc.  All rights reserved.
+
+Tue Jan 31 12:34:01 2012
+
+drc -z system-routed.ncd
+
+WARNING:PhysDesignRules:372 - Gated clock. Clock net
+   lcd0/lcd0/LCD_Ram/EstadoSiguiente_not0001 is sourced by a combinatorial pin.
+   This is not good design practice. Use the CE pin to control the loading of
+   data into the flip-flop.
+WARNING:PhysDesignRules:372 - Gated clock. Clock net
+   sim0/sim0/SIM/contadorBit_clk is sourced by a combinatorial pin. This is not
+   good design practice. Use the CE pin to control the loading of data into the
+   flip-flop.
+WARNING:PhysDesignRules:372 - Gated clock. Clock net
+   sim0/sim0/SIM/EstadoFuturo_or0000 is sourced by a combinatorial pin. This is
+   not good design practice. Use the CE pin to control the loading of data into
+   the flip-flop.
+WARNING:PhysDesignRules:372 - Gated clock. Clock net
+   sim0/sim0/SIM/contadorByte_clk is sourced by a combinatorial pin. This is not
+   good design practice. Use the CE pin to control the loading of data into the
+   flip-flop.
+WARNING:PhysDesignRules:1063 - Issue with pin connections and/or configuration
+   on
+   block:<lm0/instruction_unit/icache/memories[0].way_0_data_ram/Mram_mem1.A>:<R
+   AMB16_RAMB16A>.  The block is configured to use an input parity pins. There
+   is a dangling output parity pin.
+WARNING:PhysDesignRules:1063 - Issue with pin connections and/or configuration
+   on
+   block:<lm0/instruction_unit/icache/memories[0].way_0_data_ram/Mram_mem2.A>:<R
+   AMB16_RAMB16A>.  The block is configured to use an input parity pins. There
+   is a dangling output parity pin.
+WARNING:PhysDesignRules:1063 - Issue with pin connections and/or configuration
+   on
+   block:<lm0/instruction_unit/icache/memories[0].way_0_data_ram/Mram_mem3.A>:<R
+   AMB16_RAMB16A>.  The block is configured to use an input parity pins. There
+   is a dangling output parity pin.
+DRC detected 0 errors and 7 warnings.  Please see the previously displayed
+individual error or warning messages for more details.

@@ -1,0 +1,116 @@
+Release 13.1 Map O.40d (lin)
+Xilinx Map Application Log File for Design 'system'
+
+Design Information
+------------------
+Command Line   : map system.ngd 
+Target Device  : xc3s500e
+Target Package : fg320
+Target Speed   : -4
+Mapper Version : spartan3e -- $Revision: 1.55 $
+Mapped Date    : Tue Jan 31 12:18:25 2012
+
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+INFO:Security:54 - 'xc3s500e' is a WebPack part.
+WARNING:Security:42 - Your license support version '2012.01' for WebPack expires
+in 0 days after which you will not qualify for Xilinx software updates or new
+releases.
+----------------------------------------------------------------------
+Mapping design into LUTs...
+Writing file system.ngm...
+Running directed packing...
+Running delay-based LUT packing...
+Running related packing...
+Updating timing models...
+Writing design file "system.ncd"...
+WARNING:PhysDesignRules:372 - Gated clock. Clock net
+   lcd0/lcd0/LCD_Ram/EstadoSiguiente_not0001 is sourced by a combinatorial pin.
+   This is not good design practice. Use the CE pin to control the loading of
+   data into the flip-flop.
+WARNING:PhysDesignRules:372 - Gated clock. Clock net
+   sim0/sim0/SIM/contadorBit_clk is sourced by a combinatorial pin. This is not
+   good design practice. Use the CE pin to control the loading of data into the
+   flip-flop.
+WARNING:PhysDesignRules:372 - Gated clock. Clock net
+   sim0/sim0/SIM/EstadoFuturo_or0000 is sourced by a combinatorial pin. This is
+   not good design practice. Use the CE pin to control the loading of data into
+   the flip-flop.
+WARNING:PhysDesignRules:372 - Gated clock. Clock net
+   sim0/sim0/SIM/contadorByte_clk is sourced by a combinatorial pin. This is not
+   good design practice. Use the CE pin to control the loading of data into the
+   flip-flop.
+WARNING:PhysDesignRules:1063 - Issue with pin connections and/or configuration
+   on
+   block:<lm0/instruction_unit/icache/memories[0].way_0_data_ram/Mram_mem1.A>:<R
+   AMB16_RAMB16A>.  The block is configured to use an input parity pins. There
+   is a dangling output parity pin.
+WARNING:PhysDesignRules:1063 - Issue with pin connections and/or configuration
+   on
+   block:<lm0/instruction_unit/icache/memories[0].way_0_data_ram/Mram_mem2.A>:<R
+   AMB16_RAMB16A>.  The block is configured to use an input parity pins. There
+   is a dangling output parity pin.
+WARNING:PhysDesignRules:1063 - Issue with pin connections and/or configuration
+   on
+   block:<lm0/instruction_unit/icache/memories[0].way_0_data_ram/Mram_mem3.A>:<R
+   AMB16_RAMB16A>.  The block is configured to use an input parity pins. There
+   is a dangling output parity pin.
+
+Design Summary
+--------------
+
+Design Summary:
+Number of errors:      0
+Number of warnings:    7
+Logic Utilization:
+  Total Number Slice Registers:       2,214 out of   9,312   23%
+    Number used as Flip Flops:        2,046
+    Number used as Latches:             168
+  Number of 4 input LUTs:             7,628 out of   9,312   81%
+Logic Distribution:
+  Number of occupied Slices:          4,598 out of   4,656   98%
+    Number of Slices containing only related logic:   4,598 out of   4,598 100%
+    Number of Slices containing unrelated logic:          0 out of   4,598   0%
+      *See NOTES below for an explanation of the effects of unrelated logic.
+  Total Number of 4 input LUTs:       7,769 out of   9,312   83%
+    Number used as logic:             4,044
+    Number used as a route-thru:        141
+    Number used for Dual Port RAMs:   1,536
+      (Two LUTs used per Dual Port RAM)
+    Number used for 32x1 RAMs:        2,048
+      (Two LUTs used per 32x1 RAM)
+
+  The Slice Logic Distribution report is not meaningful if the design is
+  over-mapped for a non-slice resource or if Placement fails.
+
+  Number of bonded IOBs:                 29 out of     232   12%
+    IOB Flip Flops:                       8
+  Number of RAMB16s:                     20 out of      20  100%
+  Number of BUFGMUXs:                     4 out of      24   16%
+  Number of MULT18X18SIOs:                3 out of      20   15%
+
+Average Fanout of Non-Clock Nets:                5.29
+
+Peak Memory Usage:  187 MB
+Total REAL time to MAP completion:  11 secs 
+Total CPU time to MAP completion:   11 secs 
+
+NOTES:
+
+   Related logic is defined as being logic that shares connectivity - e.g. two
+   LUTs are "related" if they share common inputs.  When assembling slices,
+   Map gives priority to combine logic that is related.  Doing so results in
+   the best timing performance.
+
+   Unrelated logic shares no connectivity.  Map will only begin packing
+   unrelated logic into a slice once 99% of the slices are occupied through
+   related logic packing.
+
+   Note that once logic distribution reaches the 99% level through related
+   logic packing, this does not mean the device is completely utilized.
+   Unrelated logic packing will then begin, continuing until all usable LUTs
+   and FFs are occupied.  Depending on your timing budget, increased levels of
+   unrelated logic packing may adversely affect the overall timing performance
+   of your design.
+
+Mapping completed.
+See MAP report file "system.mrp" for details.

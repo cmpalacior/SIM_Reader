@@ -1,0 +1,287 @@
+
+module simcard(
+	 input				RST,
+	 input				CLK_FPGA,
+	 output				SIM_VPP,
+	 output				SIM_VCC,
+	 output				SIM_CLK,
+	 output				SIM_RST,
+	 inout				SIM_IO,
+	 //
+	 output				Dato_Valido,
+	 output				Hecho,
+	 input		[5:0]	address,
+	 input				Contacto,
+	 //
+	 input				Habilitar,
+	 output  	[7:0]	Salida
+    );
+	 
+//**************************************************************************
+//  Divisor de Frecuencia a 3.125 MHz
+
+	 wire			CLK;
+	 reg	[3:0]	cont_div = 4'h0;
+	
+	 always @ (posedge CLK_FPGA)
+		cont_div	<= cont_div + 1;
+	
+	 assign		CLK	=	cont_div[3];
+
+//**************************************************************************
+//  Declaración de los Estados (Máquina de Control)
+	 
+	 parameter	Inactivo				=	0,
+					Inicio				=	1,
+					CLKHab				=	2,
+					EsperarDato			=	3,
+					LeerDato				=	4,
+					ProcesarDato		=	5,
+					EscribirComando	=	6;
+	 
+	 reg	[2:0]	EstadoActual	=	0,
+					EstadoFuturo;
+					
+//**************************************************************************
+//  Señales Internas y Registros
+	 
+	 wire				io_rw,
+						clk_en,
+						contador_enable,
+						Reset,
+						EspereByte,
+						ComandoListo,
+						ComandoFin;
+	 reg				Enable;
+	 reg		[8:0]	contador = 0;
+	 wire				contadorBit_clk;
+	 reg		[3:0]	contadorBit = 0;
+	 wire				contadorByte_clk;
+	 reg		[7:0]	contadorByte = 0;
+	 reg	  	[9:0]	datos;
+	 wire		[9:0]	datos_mux;
+	 
+	 
+//**************************************************************************
+// 					Máquina de Estados (Control de la Tarjeta)
+
+	 always @ (EstadoActual, Enable, SIM_IO, contadorBit, EspereByte, ComandoListo, ComandoFin) begin
+		case(EstadoActual)
+			Inactivo:			if (Enable)
+										EstadoFuturo	<=	Inicio;
+									else
+										EstadoFuturo	<=	Inactivo;
+			Inicio:				EstadoFuturo	<=	CLKHab;
+			CLKHab:				EstadoFuturo	<=	EsperarDato;
+			EsperarDato:		if (~SIM_IO)
+										EstadoFuturo	<=	LeerDato;
+									else
+										EstadoFuturo	<=	EsperarDato;
+			LeerDato:			if (contadorBit == 10)
+										EstadoFuturo	<=	ProcesarDato;
+									else
+										EstadoFuturo	<=	LeerDato;
+			ProcesarDato:		if (EspereByte)
+										EstadoFuturo	<=	LeerDato;
+									else
+										if (ComandoListo)
+											EstadoFuturo	<=	EscribirComando;
+										else
+											EstadoFuturo	<=	EsperarDato;
+			EscribirComando:	if (ComandoFin)
+										EstadoFuturo	<=	EsperarDato;
+									else
+										EstadoFuturo	<=	EscribirComando;
+		endcase
+	 end
+	 
+	
+//**************************************************************************
+//  Restablecimiento y Cambio de Estado
+
+	 always @ (posedge CLK or posedge Reset) begin
+		if (Reset)
+			EstadoActual	<= Inactivo;
+		else
+			EstadoActual	<= EstadoFuturo;
+	end
+	
+//**************************************************************************
+//  Lógica Combinatoria
+	 
+	 assign 	Reset 				= 	RST | (~Habilitar);
+	 assign 	clk_en		 		= 	(EstadoActual == Inactivo) 			? 1'b0 : 
+											(EstadoActual == Inicio) 				? 1'b0 : 1'b1;
+	 assign 	io_rw		 			= 	(EstadoActual == EscribirComando)	? 1'b0 : 1'b1;
+	 assign 	contador_enable	= 	(EstadoActual == LeerDato) 			? 1'b1 : 
+											(EstadoActual == EscribirComando) 	? 1'b1 : 1'b0;
+	 
+	 assign	SIM_RST 				=	(EstadoActual == Inactivo) 			? 1'b0 : 
+											(EstadoActual == Inicio) 				? 1'b0 : 
+											(EstadoActual == CLKHab) 				? 1'b0 : 1'b1;
+	 assign 	SIM_VCC 				= 	(EstadoActual == Inactivo) 			? 1'b0 : 1'b1;
+	 assign 	SIM_VPP 				= 	(EstadoActual == Inactivo) 			? 1'b0 : 1'bz;
+	 assign 	SIM_CLK 				= 	CLK & clk_en;
+	 assign 	SIM_IO 				= 	(~io_rw)		? datos[0] : 1'bz;
+
+//**************************************************************************
+//  Lógica Secuencial
+	 
+//**************************************************************************
+//  Anti-rebote ff
+//**************************************************************************
+	 always @ (posedge CLK or posedge Reset) begin
+		if (Reset)
+			Enable	<= 1'b0;
+		else
+			Enable	<= Habilitar | Enable;
+	 end
+	 
+//**************************************************************************
+//  Contador de 9-bits, unidad elemental de tiempo etu = 372 / f
+//**************************************************************************
+	 always @ (posedge CLK or negedge contador_enable) begin
+	 	if (~contador_enable)
+	 		contador <= 0;
+	 	else
+			if (contador == 371)
+				contador <= 0;
+			else
+				contador <= contador + 1;
+	 end
+	 
+//**************************************************************************
+//  Contador de bits de 4-bit, cuenta bits en un marco de caracter
+//**************************************************************************
+	 assign			contadorBit_clk	=	(contador == 371)	?	1'b1 : 1'b0;
+	 
+	 always @ (posedge contadorBit_clk or negedge contador_enable) begin
+		if (~contador_enable)
+			contadorBit <= 0;
+	 	else
+			if (contadorBit == 10)
+				contadorBit <= 0;
+			else
+				contadorBit <= contadorBit + 1;
+	 end
+	 
+//**************************************************************************
+//  Contador de Bytes de 8-bit, cuenta bytes en un comando/respuesta
+//**************************************************************************
+	 assign 			contadorByte_clk 	= 	(contadorBit == 10)	?	1'b1 : 1'b0;
+	 
+	 always @ (posedge contadorByte_clk or negedge Enable) begin
+		if (~Enable)
+			contadorByte <= 0;
+	 	else
+			contadorByte <= contadorByte + 1;
+	 end
+	 
+//**************************************************************************
+//  Registro de Desplazamiento de 9-bit
+//**************************************************************************
+	 always @ (posedge CLK or negedge contador_enable) begin
+		if (~contador_enable)
+			datos <= 0;
+		else
+			if ((contador == 186) & (io_rw))
+				datos <= {datos[8:0], SIM_IO};
+			else
+				if ((contadorBit == 0) & (contador == 0) & (~io_rw))
+					datos <= datos_mux;
+				else
+					if ((contador == 371) & (~io_rw))
+						datos[9:0] <= {1'b1, datos[9:1]};
+					else
+						datos <= datos;
+	 end
+	 
+	 assign	datos_mux	=	(contadorByte == 11)	?	10'b0101000000	: // A0
+									(contadorByte == 12)	?	10'b1101001000	: // A4
+									(contadorByte == 13)	?	10'b0000000000	: // 00
+									(contadorByte == 14)	?	10'b0000000000	: // 00
+									(contadorByte == 15)	?	10'b1000000100	: // 02
+									//			A4
+									(contadorByte == 16)	?	10'b1011111110	: // 7F
+									(contadorByte == 17)	?	10'b1000100000	: // 10
+									//
+									(contadorByte == 22)	?	10'b0101000000	: // A0
+									(contadorByte == 23)	?	10'b1101001000	: // A4
+									(contadorByte == 24)	?	10'b0000000000	: // 00
+									(contadorByte == 25)	?	10'b0000000000	: // 00
+									(contadorByte == 26)	?	10'b1000000100	: // 02
+									//			91
+									(contadorByte == 27)	?	10'b0011011110	: // 6F
+									(contadorByte == 28)	?	10'b0001110100	: // 3A
+									//
+									//
+									(contadorByte == 33)	?	10'b0101000000	: // A0
+									(contadorByte == 34)	?	10'b0110000000	: // C0
+									(contadorByte == 35)	?	10'b0000000000	: // 00
+									(contadorByte == 36)	?	10'b0000000000	: // 00
+									(contadorByte == 37)	?	10'b0000011110	: // 0F
+									//
+									(contadorByte == 58)	?	10'b0101000000	: // A0
+									(contadorByte == 59)	?	10'b0101100100	: // B2
+									(contadorByte == 60)	?	10'b0000000000	: // 00
+									(contadorByte == 61)	?	10'b1000000100	: // 02
+									(contadorByte == 62)	?	10'b1000111000	: // 1C
+									//
+									(contadorByte == 95)	?	10'b0101000000	: // A0
+									(contadorByte == 96)	?	10'b0101100100	: // B2
+									(contadorByte == 97)	?	10'b0000000000	: // 00
+									(contadorByte == 98)	?	10'b1000000100	: // 02
+									(contadorByte == 99)	?	10'b1000111000	: // 1C
+									//
+									10'b1111111111;
+	 
+	 assign	EspereByte	=	(contadorByte == 10)	?	1'b1	:
+									(contadorByte == 21)	?	1'b1	:
+									(contadorByte == 32)	?	1'b1	:
+									(contadorByte == 57)	?	1'b1	:
+									(contadorByte == 94)	?	1'b1	:
+									1'b0;
+									
+	 assign 	ComandoListo	=	(contadorByte == 11)	?	1'b1	:
+										(contadorByte == 22)	?	1'b1	:
+										(contadorByte == 33)	?	1'b1	:
+										(contadorByte == 58)	?	1'b1	:
+										(contadorByte == 95)	?	1'b1	:
+										1'b0;
+										
+	 assign	ComandoFin	=	(contadorByte == 18)	?	1'b1	:
+									(contadorByte == 29)	?	1'b1	:
+									(contadorByte == 38)	?	1'b1	:
+									(contadorByte == 63)	?	1'b1	:
+									(contadorByte == 100)	?	1'b1	:
+									1'b0;
+	 
+	 assign	Dato_Valido	= (((contadorByte	>	63)&
+									(contadorByte	<	92)) |
+									((contadorByte	>	100)&
+									(contadorByte	<	129)))	?	contadorByte_clk	:	1'b0;
+	 
+	 assign	Dato_Listo	= (((contadorByte	>	63)&
+									(contadorByte	<	92)) |
+									((contadorByte	>	100)&
+									(contadorByte	<	129)))	?	1'b1	:	1'b0;
+									
+	 assign	Salida[7]	=	(Dato_Listo)			?	datos[1]	:	1'b0;
+	 assign	Salida[6]	=	(Dato_Listo)			?	datos[2]	:	1'b0;
+	 assign	Salida[5]	=	(Dato_Listo)			?	datos[3]	:	1'b0;
+	 assign	Salida[4]	=	(Dato_Listo)			?	datos[4]	:	1'b0;
+	 assign	Salida[3]	=	(Dato_Listo)			?	datos[5]	:	1'b0;
+	 assign	Salida[2]	=	(Dato_Listo)			?	datos[6]	:	1'b0;
+	 assign	Salida[1]	=	(Dato_Listo)			?	datos[7]	:	1'b0;
+	 assign	Salida[0]	=	(Dato_Listo)			?	datos[8]	:	1'b0;
+	 
+	 //assign	Salida		=	contadorByte;
+	 
+	 assign	Hecho			= (contadorByte	==	130)?	1'b1	:	1'b0;
+	 
+//**************************************************************************
+//  Modulos de Prueba
+//**************************************************************************	 
+	 
+	 
+endmodule

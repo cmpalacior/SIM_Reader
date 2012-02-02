@@ -1,0 +1,35 @@
+# ==== Clock inputs (CLK) ====
+NET "clk" LOC = "B8";
+NET "rst"  LOC = "H13";
+NET "sim_done"  LOC = "R4";
+
+# ==== LCD ====
+NET "lcd_rs" LOC = "T17";
+NET "lcd_e"	LOC = "R15";
+NET "lcd_data[0]" LOC = "J12";
+NET "lcd_data[1]" LOC = "G16";
+NET "lcd_data[2]" LOC = "F14";
+NET "lcd_data[3]" LOC = "H15";
+NET "lcd_data[4]" LOC = "G15";
+NET "lcd_data[5]" LOC = "J16";
+NET "lcd_data[6]" LOC = "G13";
+NET "lcd_data[7]" LOC = "H16";
+
+# ==== Matrix Keypad ====
+NET "key_row[3]" LOC = "L15";
+NET "key_row[2]" LOC = "K12";
+NET "key_row[1]" LOC = "L17";
+NET "key_row[0]" LOC = "M15";
+
+NET "key_column[3]" LOC = "M16";
+NET "key_column[2]" LOC = "M14";
+NET "key_column[1]" LOC = "L16";
+NET "key_column[0]" LOC = "K13";
+
+# ==== SIM Card ====
+NET "sim_vpp" LOC = "R18";
+NET "sim_vcc" LOC = "U18";
+NET "sim_clk" LOC = "R16";
+NET "sim_rst" LOC = "T18";
+NET "sim_io"  LOC = "P17";
+
